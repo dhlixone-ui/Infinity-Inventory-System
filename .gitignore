@@ -1,0 +1,7 @@
+# Local application data — never publish customer records or account data.
+data/*.db
+data/backups/
+
+# Python runtime files
+__pycache__/
+*.py[cod]
