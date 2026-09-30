@@ -148,7 +148,7 @@ pages = ["Overview", "Inventory"] if DEMO_MODE else ["My Profile", "Overview", "
 if can_operate:
     pages.append("Stock movements")
 pages.append("Reports")
-if is_super and not DEMO_MODE:
+if is_super:
     pages.append("Administration")
 page = st.sidebar.radio("NAVIGATION", pages)
 
@@ -602,16 +602,19 @@ if page == "Overview":
             .fillna(0)
         )
         st.markdown("#### Stock health by site")
-        st.bar_chart(
-            location_health,
-            color=[
-                "#aa6b39" if column == "Low stock" else "#474542"
-                for column in location_health.columns
-            ],
-            horizontal=True,
-            height=250,
-        )
-        st.caption("Number of healthy and low-stock item lines at each location.")
+        if data.empty:
+            st.info("No actual stock has been entered yet.")
+        else:
+            st.bar_chart(
+                location_health,
+                color=[
+                    "#aa6b39" if column == "Low stock" else "#474542"
+                    for column in location_health.columns
+                ],
+                horizontal=True,
+                height=250,
+            )
+            st.caption("Number of healthy and low-stock item lines at each location.")
     with analysis_right:
         last_30_days = activity[
             activity["movement_type"].isin(
@@ -982,6 +985,13 @@ elif page == "Reports":
     r2.metric("Inventory lines", f"{len(data):,}")
     r3.metric("Low-stock lines", f"{(data['status'] == 'Low stock').sum():,}")
     r4.metric("Stock value", f"${data['stock_value'].sum():,.2f}")
+
+    if data.empty:
+        st.info(
+            "No actual inventory has been entered yet. Use Administration → Item "
+            "catalogue → Bulk item import to upload the customer's opening stock."
+        )
+        st.stop()
 
     tab1, tab2, tab3, tab4 = st.tabs(
         ["Stock position", "Movement ledger", "Transfers", "Exports"]
