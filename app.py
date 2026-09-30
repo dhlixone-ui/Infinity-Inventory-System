@@ -57,8 +57,22 @@ st.set_page_config(
 init_db()
 inject_css()
 
+# Temporary proof-of-concept setting. Set this to False before the system is
+# used operationally so individual user accounts and password protection return.
+DEMO_MODE = True
 
-if "auth_user" not in st.session_state:
+if DEMO_MODE:
+    st.session_state.auth_user = {
+        "id": 0,
+        "username": "demo-super-user",
+        "display_name": "Super User",
+        "role": "Super User",
+        "site": "HQ Steppes Road",
+        "profile_image": None,
+        "profile_image_type": None,
+        "must_change_password": False,
+    }
+elif "auth_user" not in st.session_state:
     login_header()
     left, centre, right = st.columns([1.1, 1.4, 1.1])
     with centre:
@@ -102,11 +116,14 @@ if user["must_change_password"]:
     st.stop()
 
 sidebar_brand()
-if user.get("profile_image"):
+if user.get("profile_image") and not DEMO_MODE:
     st.sidebar.image(user["profile_image"], width=82)
-st.sidebar.caption(f"Signed in as **{user['display_name']}**")
-st.sidebar.caption(f"{user['role']} · {user['site']}")
-if st.sidebar.button("Sign out"):
+if DEMO_MODE:
+    st.sidebar.info("Proof-of-concept mode\n\nNo login is required. Everyone has Super User access.")
+else:
+    st.sidebar.caption(f"Signed in as **{user['display_name']}**")
+    st.sidebar.caption(f"{user['role']} · {user['site']}")
+if not DEMO_MODE and st.sidebar.button("Sign out"):
     del st.session_state.auth_user
     st.rerun()
 
@@ -127,13 +144,19 @@ if licence["days_remaining"] <= 14:
             f"Licence: {licence['days_remaining']} {day_word} remaining"
         )
 
-pages = ["My Profile", "Overview", "Inventory"]
+pages = ["Overview", "Inventory"] if DEMO_MODE else ["My Profile", "Overview", "Inventory"]
 if can_operate:
     pages.append("Stock movements")
 pages.append("Reports")
-if is_super:
+if is_super and not DEMO_MODE:
     pages.append("Administration")
 page = st.sidebar.radio("NAVIGATION", pages)
+
+if DEMO_MODE:
+    st.warning(
+        "Proof-of-concept mode is active. Password protection and individual user "
+        "accounts are temporarily disabled. Anyone with this link has full access."
+    )
 
 if licence_read_only:
     st.error(
